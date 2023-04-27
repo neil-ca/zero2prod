@@ -15,21 +15,13 @@ path = "src/main.rs"
 name = "zero2prod"
 
 [dependencies]
-actix-web = "4.3.1"
-config = "0.11"
-serde = { version = "1.0.160", features = ["derive"] }
-tokio = { version = "1.27.0", features = ["macros", "rt-multi-thread"] }
-[dependencies.sqlx]
-version = "0.5.7"
-default-features = false
-features = [
-    "runtime-actix-rustls",
-    "macros",
-    "postgres",
-    "uuid",
-    "chrono",
-    "migrate"
-]
+actix-web = "4"
+config = { version = "0.13", default-features = false, features = ["yaml"] }
+serde = "1.0.160"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+sqlx = { version = "0.6", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "chrono", "migrate"] }
+uuid = { version="1", features = ["v4"] }
+chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
 
 [dev-dependencies]
 reqwest = "0.11.16"
