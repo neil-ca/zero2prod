@@ -18,13 +18,14 @@ name = "zero2prod"
 actix-web = "4"
 config = { version = "0.13", default-features = false, features = ["yaml"] }
 tracing = { default-features = false, features = ["log"] }
+tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 serde = "1.0.160"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 sqlx = { version = "0.6", default-features = false, features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "chrono", "migrate"] }
 uuid = { version="1", features = ["v4"] }
 chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
-env_logger = "0.10.0"
-log = "0.4.17"
+tracing-bunyan-formatter = "0.3.7"
+tracing-log = "0.1.3"
 
 [dev-dependencies]
 reqwest = "0.11.16"
