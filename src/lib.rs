@@ -1,6 +1,7 @@
 pub mod configuration;
 pub mod routes;
 pub mod startup;
+pub mod telemetry;
 
 //pub enum Payload<S = Pin<Box<dyn Stream<Item = Result<Bytes, PayloadError>> + 'static, Global>>> {
     //None,
