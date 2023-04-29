@@ -1,4 +1,5 @@
 use std::net::TcpListener;
+use secrecy::ExposeSecret;
 use uuid::Uuid;
 use zero2prod::{startup::run, telemetry::{get_subscriber, init_subscriber}};
 use sqlx::{PgPool, PgConnection, Connection, Executor};
@@ -13,7 +14,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     } else { 
         let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
         init_subscriber(subscriber);
-    }
+    };
 });
 
 #[derive(Debug)]
@@ -53,7 +54,7 @@ async fn spawn_app() -> TestApp {
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
     // Create database 
-    let mut connection = PgConnection::connect(&config.connection_string_without_db())
+    let mut connection = PgConnection::connect(&config.connection_string_without_db().expose_secret())
         .await
         .expect("Failed to connect to Postgres");
     connection
@@ -62,7 +63,7 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
        .expect("Failed to create database");
 
     // Migrate database 
-    let connection_pool = PgPool::connect(&config.connection_string())
+    let connection_pool = PgPool::connect(&config.connection_string().expose_secret())
         .await
         .expect("Failed to create database");
     sqlx::migrate!("./migrations")

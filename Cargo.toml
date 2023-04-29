@@ -17,7 +17,7 @@ name = "zero2prod"
 [dependencies]
 actix-web = "4"
 config = { version = "0.13", default-features = false, features = ["yaml"] }
-tracing = { default-features = false, features = ["log"] }
+tracing = { version = "0.1.37", default-features = false, features = ["log"] }
 tracing-subscriber = { version = "0.3", features = ["registry", "env-filter"] }
 serde = "1.0.160"
 tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
@@ -27,6 +27,7 @@ chrono = { version = "0.4.22", default-features = false, features = ["clock"] }
 tracing-bunyan-formatter = "0.3.7"
 tracing-log = "0.1.3"
 once_cell = "1.17.1"
-
+secrecy = { version = "0.8", features = ["serde"] }
+tracing-actix-web = "0.7.4"
 [dev-dependencies]
 reqwest = "0.11.16"
