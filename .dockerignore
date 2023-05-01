@@ -1,6 +1,5 @@
-target/
-.git
 .env
+target/
 tests/
 Dockerfile
 scripts/
