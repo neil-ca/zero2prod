@@ -3,7 +3,11 @@ name: zero2prod
 region: nyc1
 services: 
   - name: zero2prod
+<<<<<<< HEAD
     dockerfile_path: Dokerfile
+=======
+    dockerfile_path: Dckerfile
+>>>>>>> c45ace10a10aa22b17b91a749d2df1d905f2dcc7
     source_dir: .
     github:
       branch: main
