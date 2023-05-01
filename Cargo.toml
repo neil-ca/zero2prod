@@ -28,6 +28,7 @@ tracing-bunyan-formatter = "0.3.7"
 tracing-log = "0.1.3"
 secrecy = { version = "0.8", features = ["serde"] }
 tracing-actix-web = "0.7.4"
+serde-aux = "4.2.0"
 [dev-dependencies]
 reqwest = "0.11.16"
 once_cell = "1.17.1"

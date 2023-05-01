@@ -1,5 +1,4 @@
-use secrecy::ExposeSecret;
-use sqlx::PgPool;
+use sqlx::postgres::PgPoolOptions;
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 use std::net::TcpListener;
 use zero2prod::configuration::get_configuration;
@@ -13,8 +12,8 @@ async fn main() -> std::io::Result<()> {
 
     // Panic if we can't read configuration
     let configuration = get_configuration().expect("Failed to read configuration");
-    let connection_pool = PgPool::connect_lazy(&configuration.database.connection_string().expose_secret())
-        .expect("Failed to connect to Postgres");
+    let connection_pool = PgPoolOptions::new() 
+        .connect_lazy_with(configuration.database.with_db());
     //let connection_pool = PgPoolOptions::new()
         //.connect(&configuration.database.connection_string().expose_secret());
 
@@ -24,7 +23,3 @@ async fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-//async fn greet(req: HttpRequest) -> impl Responder {
-//let name = req.match_info().get("name").unwrap_or("World");
-//format!("Hello {}!", &name)
-//}
