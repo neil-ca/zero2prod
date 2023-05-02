@@ -3,6 +3,7 @@ use serde_aux::field_attributes::deserialize_number_from_string;
 use sqlx::ConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::postgres::PgSslMode;
+use std::convert::{TryInto, TryFrom};
 
 #[derive(serde::Deserialize)]
 pub struct Settings {
@@ -31,7 +32,7 @@ pub struct DatabaseSettings {
 impl DatabaseSettings {
     pub fn without_db(&self) -> PgConnectOptions {
         let ssl_mode = if self.require_ssl {
-            PgSslMode::Prefer
+            PgSslMode::Require
         } else {
             PgSslMode::Prefer
         };
