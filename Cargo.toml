@@ -30,6 +30,7 @@ secrecy = { version = "0.8", features = ["serde"] }
 tracing-actix-web = "0.7.4"
 serde-aux = "4.2.0"
 unicode-segmentation = "1.10.1"
+claim = "0.5.0"
 [dev-dependencies]
 reqwest = "0.11.16"
 once_cell = "1.17.1"
