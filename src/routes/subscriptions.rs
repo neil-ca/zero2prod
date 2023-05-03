@@ -2,7 +2,7 @@ use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
-use crate::domain::{NewSubscriber, SubscriberName};
+use crate::domain::{NewSubscriber, SubscriberName, SubscriberEmail};
 // An extension trait to provide the `graphemes` method
 // on `String` and `&str`
 use unicode_segmentation::UnicodeSegmentation;
@@ -26,9 +26,13 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         Ok(name) => name,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
+    let email = match SubscriberEmail::parse(form.0.email) {
+        Ok(email) => email,
+        Err(_) => return HttpResponse::BadRequest().finish()
+    };
     //let subscriber_name = crate::domain::SubscriberName(form.name.clone());
     let new_subscriber = NewSubscriber {
-        email: form.0.email,
+        email,
         name,
     };
     match insert_subscriber(&pool, &new_subscriber).await {
@@ -60,7 +64,7 @@ pub async fn insert_subscriber(
     VALUES ($1, $2, $3, $4)
             "#,
         Uuid::new_v4(),
-        new_subscriber.email,
+        new_subscriber.email.as_ref(),
         new_subscriber.name.as_ref(),
         Utc::now()
     )
