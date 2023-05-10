@@ -15,8 +15,12 @@ impl EmailClient {
         sender: SubscriberEmail,
         authorization_token: Secret<String>,
     ) -> Self {
+        let http_client = Client::builder()
+            .timeout(std::time::Duration::from_secs(10))
+            .build()
+            .unwrap();
         Self {
-            http_client: Client::new(),
+            http_client,
             base_url,
             sender,
             authorization_token,
@@ -82,15 +86,23 @@ mod tests {
             }
         }
     }
+
+    fn subject() -> String {
+        Sentence(1..2).fake()
+    }
+    fn content() -> String {
+        Paragraph(1..10).fake()
+    }
+    fn email() -> SubscriberEmail {
+        SubscriberEmail::parse(SafeEmail().fake()).unwrap()
+    }
+    fn email_client(base_url: String) -> EmailClient {
+        EmailClient::new(base_url, email(), Secret::new(Faker.fake()))
+    }
     #[tokio::test]
     async fn send_email_sends_the_expected_request() {
         let mock_server = MockServer::start().await;
-        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let email_client = EmailClient::new(mock_server.uri(), sender, Secret::new(Faker.fake()));
-
-        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let subject: String = Sentence(1..2).fake();
-        let content: String = Paragraph(1..10).fake();
+        let email_client = email_client(mock_server.uri());
 
         Mock::given(header_exists("api"))
             .and(header("Content-Type", "application/json"))
@@ -103,18 +115,13 @@ mod tests {
             .await;
         // act
         let _ = email_client
-            .send_email(subscriber_email, &subject, &content)
+            .send_email(email(), &subject(), &content())
             .await;
     }
     #[tokio::test]
     async fn send_email_succeeds_the_server_returns_200() {
         let mock_server = MockServer::start().await;
-        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let email_client = EmailClient::new(mock_server.uri(), sender, Secret::new(Faker.fake()));
-
-        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let subject: String = Sentence(1..2).fake();
-        let content: String = Paragraph(1..10).fake();
+        let email_client = email_client(mock_server.uri());
 
         Mock::given(any())
             .respond_with(ResponseTemplate::new(200))
@@ -123,7 +130,7 @@ mod tests {
             .await;
         // act
         let outcome = email_client
-            .send_email(subscriber_email, &subject, &content)
+            .send_email(email(), &subject(), &content())
             .await;
         assert_ok!(outcome);
     }
@@ -131,12 +138,7 @@ mod tests {
     #[tokio::test]
     async fn send_email_fails_if_the_server_returns_500() {
         let mock_server = MockServer::start().await;
-        let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let email_client = EmailClient::new(mock_server.uri(), sender, Secret::new(Faker.fake()));
-
-        let subscriber_email = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
-        let subject: String = Sentence(1..2).fake();
-        let content: String = Paragraph(1..10).fake();
+        let email_client = email_client(mock_server.uri());
 
         Mock::given(any())
             .respond_with(ResponseTemplate::new(500))
@@ -144,8 +146,36 @@ mod tests {
             .mount(&mock_server)
             .await;
         let outcome = email_client
-            .send_email(subscriber_email, &subject, &content)
+            .send_email(email(), &subject(), &content())
             .await;
+        assert_err!(outcome);
+    }
+
+    // This is far from ideal: if the server starts misbehaving we might 
+    // start to accumulate several "hanging" requests.
+    // We are not hanging up on the server, so the connection is bussy: every
+    // time we need to send an email we will have to open a new connection. If
+    // the server does not recover fast enough, and we do not close any of the 
+    // open connections, we might end up with socket exhaustion/performance defradation.
+    // As a rule of thumb: every time you are performing an IO operation, always set a timeout.
+
+    // Timeouts
+    #[tokio::test]
+    async fn send_email_times_out_if_the_server_takes_too_long() {
+        let mock_server = MockServer::start().await;
+        let email_client = email_client(mock_server.uri());
+
+        let response = ResponseTemplate::new(200)
+            .set_delay(std::time::Duration::from_secs(180));
+        Mock::given(any())
+            .respond_with(response)
+            .expect(1)
+            .mount(&mock_server)
+            .await;
+        let outcome = email_client
+            .send_email(email(), &subject(), &content())
+            .await;
+
         assert_err!(outcome);
     }
 }
