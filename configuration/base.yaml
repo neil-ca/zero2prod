@@ -11,3 +11,4 @@ email_client:
   base_url: "localhost"
   sender_email: "test@gmail.com"
   authorization_token: "337d0cfb705f7d1db093175c917a8e6f-6b161b0a-9df1edab"
+  timeout_milliseconds: 10000
