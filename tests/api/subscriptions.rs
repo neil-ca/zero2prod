@@ -3,7 +3,6 @@ use crate::helpers::spawn_app;
 async fn subscribe_resturns_a_200_for_valid_form_data() {
     // Arrange
     let app = spawn_app().await;
-    let client = reqwest::Client::new();
     let body = "name=neil%20cam&email=neil%40gmail.com";
 
     //for (body, description) in test_cases {

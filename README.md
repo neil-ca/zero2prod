@@ -118,3 +118,9 @@ To move forward with the implementation strategy `confirmation emails`, we need
 to evolve our database schema as follows:
 * add a new table, subscription_tokens
 * add a new mandatory column, status, to the existing subscriptions table 
+### Multi-step Migrations 
+A big bang release won't cut it - we need to get there in multiple, smaller steps.
+The pattern is somewhat similar to what we see in test-driven development: we
+don't change code and test at the same time - one of the two needs to stay still
+while the other changes.
+
