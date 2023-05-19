@@ -1,4 +1,7 @@
-use crate::{domain::{NewSubscriber, SubscriberEmail, SubscriberName}, email_client::EmailClient};
+use crate::{
+    domain::{NewSubscriber, SubscriberEmail, SubscriberName},
+    email_client::EmailClient,
+};
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
@@ -32,10 +35,8 @@ impl TryFrom<FormData> for NewSubscriber {
 pub async fn subscribe(
     form: web::Form<FormData>,
     pool: web::Data<PgPool>,
-    email_client: web::Data<EmailClient>
+    email_client: web::Data<EmailClient>,
 ) -> HttpResponse {
-    let confirmation_link = "https://my-api.com/subscriptions/confirm";
-
     let new_subscriber = match form.0.try_into() {
         Ok(form) => form,
         Err(_) => return HttpResponse::BadRequest().finish(),
@@ -43,24 +44,39 @@ pub async fn subscribe(
     if insert_subscriber(&pool, &new_subscriber).await.is_err() {
         return HttpResponse::InternalServerError().finish();
     }
-    // Send a (useless) email to the new subscriber
-    // We are ignoring email delivery errors for now
-    if email_client 
-        .send_email(
-            new_subscriber.email,
-            "Welcome",
-            &format!("Welcome to our newsletter!<br/>\
-                Click <a href=\"{}\">here</a> to confirm your subscription.", confirmation_link),
-            &format!("Welcome to oue newsletter!\nVisit {} to confirm your subscription.", confirmation_link)
-        )
+    if send_confirmation_email(&email_client, new_subscriber)
         .await
-        .is_err() 
+        .is_err()
     {
         return HttpResponse::InternalServerError().finish();
     }
     HttpResponse::Ok().finish()
 }
 
+#[tracing::instrument(
+    name = "Send a confirmation email to a new subscriber",
+    skip(email_client, new_subscriber)
+)]
+pub async fn send_confirmation_email(
+    email_client: &EmailClient,
+    new_subscriber: NewSubscriber,
+) -> Result<(), reqwest::Error> {
+    // Send a (useless) email to the new subscriber
+    // We are ignoring email delivery errors for now
+    let confirmation_link = "https://my-api.com/subscriptions/confirm";
+    let plain_body = &format!(
+        "Welcome to oue newsletter!\nVisit {} to confirm your subscription.",
+        confirmation_link
+    );
+    let html_body = &format!(
+        "Welcome to our newsletter!<br/>\
+        Click <a href=\"{}\">here</a> to confirm your subscription.",
+        confirmation_link
+    );
+    email_client
+        .send_email(new_subscriber.email, "Welcome", &html_body, &plain_body)
+        .await
+}
 pub fn is_valid_name(s: &str) -> bool {
     let is_empty_or_whitespace = s.trim().is_empty();
     let is_too_long = s.graphemes(true).count() > 256;
@@ -81,7 +97,7 @@ pub async fn insert_subscriber(
     sqlx::query!(
         r#"
     INSERT INTO subscriptions (id, email, name, subscribed_at, status)
-    VALUES ($1, $2, $3, $4, 'confirmed')
+    VALUES ($1, $2, $3, $4, 'pending_confirmation')
             "#,
         Uuid::new_v4(),
         new_subscriber.email.as_ref(),
