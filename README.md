@@ -2,9 +2,16 @@
 
 ## todo 
     [*] write a module to send an email
-    [] adapt the logic of our existing POST /subscriptions request handler to match
+    [*] adapt the logic of our existing POST /subscriptions request handler to match
     the new requirments
-    [] write a GET /subscriptions/confirm request handler from scratch
+    [*] write a GET /subscriptions/confirm request handler from scratch
+    [] As the blog author, I want to send an email to all my confirmed subscribers
+    [] retrieve the newsletter issue details from the body of the incoming API call
+    [] fetch the list of all confirmed subscribers from the database
+    [] iteretate through the whole list:
+        - Get the subscriber email
+        - Send an email via Postmark
+
 
 ## sketch of how the two handlers should work:
     POST /subscriptions will:
