@@ -12,6 +12,19 @@
         - Get the subscriber email
         - Send an email via Postmark
 
+## Limitations of the Naive approach
+1. Security
+Our POST /newsletters endpoint in unprotected - anyone can fire a request to it 
+and broadcast to our entire audience
+2. You only get one shot
+As soon you hit POST /newsletter, your content goes out to your entire mailing list.
+No chance to edit or review it in draft mode before giving the green light for publising.
+3. Performance 
+We are sending emails out one at a time.
+Latency is going to be horrible for newsletters with a sizeable audience.
+4. Fault tolerance 
+If we fail to dispatch one email we bubble up the error using ? and return a 500
+to the caller. The remaining emails are never sent, nor we retry to dispatch the failed one.
 
 ## sketch of how the two handlers should work:
     POST /subscriptions will:

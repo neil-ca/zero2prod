@@ -1,9 +1,9 @@
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
-use wiremock::MockServer;
-use zero2prod::startup::Application;
 use uuid::Uuid;
+use wiremock::MockServer;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
+use zero2prod::startup::Application;
 use zero2prod::{
     startup::get_connection_pool,
     telemetry::{get_subscriber, init_subscriber},
@@ -26,13 +26,13 @@ pub struct TestApp {
     pub address: String,
     pub port: u16,
     pub db_pool: PgPool,
-    pub email_server: MockServer
+    pub email_server: MockServer,
 }
 
 // Confirmation links embedded in the request to the email API
 pub struct ConfirmationLinks {
     pub html: reqwest::Url,
-    pub plain_text: reqwest::Url
+    pub plain_text: reqwest::Url,
 }
 
 impl TestApp {
@@ -47,12 +47,8 @@ impl TestApp {
     }
 
     // Extract the confirmation links embedded in the request to the email API
-    pub fn get_confirmation_links(
-        &self,
-        email_request: &wiremock::Request
-    ) -> ConfirmationLinks {
-        let body: serde_json::Value = serde_json::from_slice(&email_request.body)
-            .unwrap();
+    pub fn get_confirmation_links(&self, email_request: &wiremock::Request) -> ConfirmationLinks {
+        let body: serde_json::Value = serde_json::from_slice(&email_request.body).unwrap();
 
         // Extract the link from one of the request fields
         let get_link = |s: &str| {
@@ -71,6 +67,15 @@ impl TestApp {
         let html = get_link(&body["HtmlBody"].as_str().unwrap());
         let plain_text = get_link(&body["TextBody"].as_str().unwrap());
         ConfirmationLinks { html, plain_text }
+    }
+
+    pub async fn post_newsletters(&self, body: serde_json::Value) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/newsletters", &self.address))
+            .json(&body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
     }
 }
 // No .await call, therefore no need for `spawn_app` to be async now.
@@ -104,7 +109,7 @@ pub async fn spawn_app() -> TestApp {
         address: format!("http://127.0.0.1:{}", application_port),
         port: application_port,
         db_pool: get_connection_pool(&configuration.database),
-        email_server
+        email_server,
     }
 }
 
