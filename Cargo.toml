@@ -15,6 +15,7 @@ path = "src/main.rs"
 name = "zero2prod"
 
 [dependencies]
+argon2 = { version = "0.3", features = ["std"] } 
 actix-web = "4"
 config = { version = "0.13", default-features = false, features = ["yaml"] }
 tracing = { version = "0.1.37", default-features = false, features = ["log"] }
