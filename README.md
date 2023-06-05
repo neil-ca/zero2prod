@@ -6,6 +6,9 @@
     the new requirments
     [*] write a GET /subscriptions/confirm request handler from scratch
     [] As the blog author, I want to send an email to all my confirmed subscribers
+    // 1. Remove the timing between an auth failure due to an invalid password 
+    and an auth failure due to a non-existent username;
+    2. Limit the nuber of failed  auth attempts for a given IP/username
     [] retrieve the newsletter issue details from the body of the incoming API call
     [] fetch the list of all confirmed subscribers from the database
     [] iteretate through the whole list:
