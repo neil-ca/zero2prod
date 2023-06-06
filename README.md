@@ -147,3 +147,23 @@ The pattern is somewhat similar to what we see in test-driven development: we
 don't change code and test at the same time - one of the two needs to stay still
 while the other changes.
 
+## Authentication
+### Error Messages Must Be Ephimeral 
+For now the error is rendered as expected and nobody can tamper 
+with our messages thanks to the HMAC tag. 
+
+Don't abuse of query params to despite of being easy to pass them along in the 
+value of the `Location` header when redirecting back to the login form on failures.
+URLs are stored in the browser history; dirty and annoying.
+Cookies are a great alternative, we can use them to implement the same strategy
+* The user enters invalid credentials and submits the form;
+* POST /login sets a cookie containing the error message and redirects the user back
+to GET /login
+* GET /login's request handler checks the cookies to see if there is an error message
+to be rendered
+* GET /login returns the HTML form to the caller and deletes the error message from the cookie.
+
+## Integrations tests for login failures
+
+
+

@@ -1,5 +1,6 @@
 application:
   port: 8000
+  hmac_secret: "Lorem ipsum dolor sit amet, qui minim labore adipisicin"
 database:
   host: "localhost"
   port: 5432
