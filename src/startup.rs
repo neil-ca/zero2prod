@@ -1,17 +1,22 @@
-use crate::configuration::{Settings, DatabaseSettings};
+use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
-use crate::routes::{health_check, subscribe, confirm, publish_newsletter, home, login_form, login};
+use crate::routes::{
+    confirm, health_check, home, login, login_form, publish_newsletter, subscribe,
+};
+use actix_web::cookie::Key;
 use actix_web::web::Data;
 use actix_web::{dev::Server, web, App, HttpServer};
-use secrecy::Secret;
-use sqlx::PgPool;
+use actix_web_flash_messages::storage::CookieMessageStore;
+use actix_web_flash_messages::FlashMessagesFramework;
+use secrecy::{ExposeSecret, Secret};
 use sqlx::postgres::PgPoolOptions;
+use sqlx::PgPool;
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 
 pub struct Application {
     port: u16,
-    server: Server
+    server: Server,
 }
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, std::io::Error> {
@@ -32,7 +37,7 @@ impl Application {
         let address = format!(
             "{}:{}",
             configuration.application.host, configuration.application.port
-         );
+        );
         let listener = TcpListener::bind(&address)?;
         let port = listener.local_addr().unwrap().port();
         let server = run(
@@ -40,7 +45,7 @@ impl Application {
             connection_pool,
             email_client,
             configuration.application.base_url,
-            configuration.application.hmac_secret
+            configuration.application.hmac_secret,
         )?;
 
         Ok(Self { port, server })
@@ -61,7 +66,7 @@ pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
         .connect_lazy_with(configuration.with_db())
 }
 
-// We need to define a wrapper type in order to retrieve the URL 
+// We need to define a wrapper type in order to retrieve the URL
 // in the `subscribe` handler
 pub struct ApplicationBaseUrl(pub String);
 pub fn run(
@@ -75,10 +80,14 @@ pub fn run(
     let db_pool = Data::new(db_pool);
     let email_client = Data::new(email_client);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
+    let message_store =
+        CookieMessageStore::builder(Key::from(hmac_secret.expose_secret().as_bytes())).build();
+    let message_framework = FlashMessagesFramework::builder(message_store).build();
     // Capture `connection` from the surrounding environment
     let server = HttpServer::new(move || {
         App::new()
             .wrap(TracingLogger::default())
+            .wrap(message_framework.clone())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             .route("/subscriptions/confirm", web::get().to(confirm))
