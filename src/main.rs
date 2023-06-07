@@ -2,7 +2,7 @@ use zero2prod::startup::Application;
 use zero2prod::telemetry::{get_subscriber, init_subscriber};
 use zero2prod::configuration::get_configuration;
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
    // The `with` method is povided by `SubscriberExt`, an extension
     // trait for `Subscriber` exposed by `tracing_subscriber`
     let subscriber = get_subscriber("zero2prod".into(), "info".into(), std::io::stdout);
