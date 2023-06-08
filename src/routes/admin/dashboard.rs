@@ -1,8 +1,10 @@
-use actix_session::Session;
+use actix_web::http::header::LOCATION;
+use actix_web::{http::header::ContentType, web, HttpResponse};
 use anyhow::Context;
-use actix_web::{web, HttpResponse, http::header::ContentType};
 use sqlx::PgPool;
 use uuid::Uuid;
+
+use crate::session_state::TypedSession;
 
 // returns an opaque 500 while preserving the error's root cause for logging
 fn e500<T>(e: T) -> actix_web::Error
@@ -13,21 +15,20 @@ where
 }
 
 pub async fn admin_dashboard(
-    session: Session,
-    pool: web::Data<PgPool>
+    session: TypedSession,
+    pool: web::Data<PgPool>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    let username = if let Some(user_id) = session
-        .get::<Uuid>("user_id")
-        .map_err(e500)? 
-    {
+    let username = if let Some(user_id) = session.get_user_id().map_err(e500)? {
         get_username(user_id, &pool).await.map_err(e500)?
     } else {
-        todo!()
+        return Ok(HttpResponse::SeeOther()
+            .insert_header((LOCATION, "/login"))
+            .finish());
     };
     Ok(HttpResponse::Ok()
         .content_type(ContentType::html())
         .body(format!(
-                r#"<!DOCTYPE html>
+            r#"<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta http-equiv="content-type" content="text/html; charset=utf-8">
@@ -41,10 +42,7 @@ pub async fn admin_dashboard(
 }
 
 #[tracing::instrument(name = "Get username", skip(pool))]
-async fn get_username(
-    user_id: Uuid,
-    pool: &PgPool
-) -> Result<String, anyhow::Error> {
+async fn get_username(user_id: Uuid, pool: &PgPool) -> Result<String, anyhow::Error> {
     let row = sqlx::query!(
         r#"
         SELECT username
