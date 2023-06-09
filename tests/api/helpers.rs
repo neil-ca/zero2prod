@@ -159,7 +159,9 @@ pub async fn spawn_app() -> TestApp {
     let test_app = TestApp {
         address: format!("http://127.0.0.1:{}", application_port),
         port: application_port,
-        db_pool: get_connection_pool(&configuration.database),
+        db_pool: get_connection_pool(&configuration.database)
+            .await
+            .expect("Failed to connect to pg"),
         email_server,
         test_user: TestUser::generate(),
         api_client: client,
@@ -230,6 +232,7 @@ impl TestUser {
         .hash_password(self.password.as_bytes(), &salt)
         .unwrap()
         .to_string();
+        dbg!(&password_hash);
 
         sqlx::query!(
             "INSERT INTO users (user_id, username, password_hash)

@@ -15,13 +15,17 @@ use sqlx::PgPool;
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
 use actix_session::storage::RedisSessionStore;
+
 pub struct Application {
     port: u16,
     server: Server,
 }
+
 impl Application {
     pub async fn build(configuration: Settings) -> Result<Self, anyhow::Error> {
-        let connection_pool = get_connection_pool(&configuration.database);
+        let connection_pool = get_connection_pool(&configuration.database)
+            .await
+            .expect("Failed to connect to postgres");
 
         let sender_email = configuration
             .email_client
@@ -62,10 +66,11 @@ impl Application {
         self.server.await
     }
 }
-pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
+pub async fn get_connection_pool(configuration: &DatabaseSettings) -> Result<PgPool, sqlx::Error> {
     PgPoolOptions::new()
         .acquire_timeout(std::time::Duration::from_secs(2))
-        .connect_lazy_with(configuration.with_db())
+        .connect_with(configuration.with_db())
+        .await
 }
 
 // We need to define a wrapper type in order to retrieve the URL
@@ -85,11 +90,8 @@ async fn run(
     let email_client = Data::new(email_client);
     let base_url = Data::new(ApplicationBaseUrl(base_url));
     let secret_key = Key::from(hmac_secret.expose_secret().as_bytes());
-    let message_store =
-        CookieMessageStore::builder(secret_key.clone()).build();
+    let message_store = CookieMessageStore::builder(secret_key.clone()).build();
     let message_framework = FlashMessagesFramework::builder(message_store).build();
-    // Capture `connection` from the surrounding environment
-    
     let redis_store = RedisSessionStore::new(redis_uri.expose_secret()).await?;
     let server = HttpServer::new(move || {
         App::new()
