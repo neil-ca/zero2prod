@@ -1,11 +1,12 @@
 use crate::authentication::{validate_credentials, AuthError, Credentials};
+use crate::routes::admin::dashboard::get_username;
 use crate::session_state::TypedSession;
 use crate::utils::{e500, see_other};
 use actix_web::{web, HttpResponse};
 use actix_web_flash_messages::FlashMessage;
 use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
-use crate::routes::admin::dashboard::get_username;
+
 #[derive(serde::Deserialize)]
 pub struct FormData {
     current_password: Secret<String>,
@@ -31,12 +32,10 @@ pub async fn change_password(
 
         return Ok(see_other("/admin/password"));
     }
-    if form.new_password.expose_secret().len() < 12  || form.new_password.expose_secret().len() > 128 {
-        FlashMessage::error(
-            "You must have more than 12 and less than 128"
-        )
-        .send();
-        return Ok(see_other("/admin/password"))
+    if form.new_password.expose_secret().len() < 12 || form.new_password.expose_secret().len() > 128
+    {
+        FlashMessage::error("You must have more than 12 and less than 128").send();
+        return Ok(see_other("/admin/password"));
     }
     let username = get_username(user_id, &pool).await.map_err(e500)?;
     let credentials = Credentials {
@@ -52,5 +51,9 @@ pub async fn change_password(
             AuthError::UnexpectedError(_) => Err(e500(e).into()),
         };
     }
-    todo!()
+    crate::authentication::change_password(user_id, form.0.new_password, &pool)
+        .await
+        .map_err(e500)?;
+    FlashMessage::error("You password has been changed.").send();
+    Ok(see_other("/admin/password"))
 }

@@ -80,7 +80,8 @@ async fn current_password_must_be_valid() {
 async fn password_must_be_more_12_and_less_128() {
     let app = spawn_app().await;
     let new_password_short = "123".to_string();
-    let right_password = "everythinghastostartsomewher".to_string();
+    let right_password = &app.test_user.password;
+    // let right_password = "everythinghastostartsomewher".to_string();
     app.post_login(&serde_json::json!({
         "username": &app.test_user.username,
         "password": &app.test_user.password
@@ -99,4 +100,42 @@ async fn password_must_be_more_12_and_less_128() {
 
     let html_page = app.get_change_password_html().await;
     assert!(html_page.contains("<p><i>You must have more than 12 and less than 128</i></p>"))
+}
+
+#[tokio::test]
+async fn changing_passord_works() {
+    let app =spawn_app().await;
+    let new_password = Uuid::new_v4().to_string();
+
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &app.test_user.password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
+
+    let response = app 
+        .post_change_password(&serde_json::json!({
+            "current_password": &app.test_user.password,
+            "new_password": &new_password,
+            "new_password_check": &new_password,
+        }))
+        .await;
+    assert_is_redirect_to(&response, "/admin/password");
+
+    let html_page = app.get_change_password_html().await;
+    assert!(html_page.contains("<p><i>You password has been changed.</i></p>"));
+
+    let response = app.post_logout().await;
+    assert_is_redirect_to(&response, "/login");
+
+    let html_page = app.get_login_html().await;
+    assert!(html_page.contains("<p><i>You have successfully logged out.</i></p>"));
+
+    let login_body = serde_json::json!({
+        "username": &app.test_user.username,
+        "password": &new_password
+    });
+    let response = app.post_login(&login_body).await;
+    assert_is_redirect_to(&response, "/admin/dashboard");
 }
