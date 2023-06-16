@@ -14,6 +14,7 @@
     [] iteretate through the whole list:
         - Get the subscriber email
         - Send an email via Postmark
+    [] build the admin panel for our writters
 
 ## Limitations of the Naive approach
 1. Security
