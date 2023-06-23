@@ -166,5 +166,6 @@ to be rendered
 
 ## Integrations tests for login failures
 
-
+## Fault-tolerant Workflows 
+Errors can happen in network I/O, Databases, Extern API's Errors 
 
