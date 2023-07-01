@@ -167,5 +167,16 @@ to be rendered
 ## Integrations tests for login failures
 
 ## Fault-tolerant Workflows 
-Errors can happen in network I/O, Databases, Extern API's Errors 
+Errors can happen in network I/O, Databases, Extern API's Errors.
+For API's calls that we can't observe if a request has been sent to the server 
+once or multiple times is idempotent.
+The caller generates a unique identifier, the idempotency key for every state-altering
+operation they want to perform.
 
+### Idempotency
+Ensures that a particular action or request has the same effect regardless of how many
+times it is executed. 
+1. Use appropiate HTTP Methods, POST is which is not.
+2. Design Stateless Operations: Your endpoints should not rely on the current state
+of the server.
+3. Generate unique identifiers
