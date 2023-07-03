@@ -7,7 +7,8 @@ use actix_web::web::ReqData;
 use actix_web::{web, HttpResponse};
 use actix_web_flash_messages::FlashMessage;
 use anyhow::Context;
-use sqlx::PgPool;
+use sqlx::{PgPool, Postgres, Transaction};
+use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -36,16 +37,16 @@ pub async fn publish_newsletter(
         idempotency_key,
     } = form.0;
     let idempotency_key: IdempotencyKey = idempotency_key.try_into().map_err(e400)?;
-    match try_processing(&pool, &idempotency_key, *user_id)
+    let transaction = match try_processing(&pool, &idempotency_key, *user_id)
         .await
         .map_err(e500)?
     {
-        NextAction::StartProcessing => {}
+        NextAction::StartProcessing(t) => t,
         NextAction::ReturnSavedResponse(saved_response) => {
             success_message().send();
             return Ok(saved_response);
         }
-    }
+    };
 
     let subscribers = get_confirmed_subscribers(&pool).await.map_err(e500)?;
     for subscriber in subscribers {
@@ -70,7 +71,7 @@ pub async fn publish_newsletter(
     }
     success_message().send();
     let response = see_other("/admin/newsletters");
-    let response = save_response(&pool, &idempotency_key, *user_id, response)
+    let response = save_response(transaction, &idempotency_key, *user_id, response)
         .await
         .map_err(e500)?;
     Ok(response)
@@ -104,4 +105,32 @@ async fn get_confirmed_subscribers(
     })
     .collect();
     Ok(confirmed_subscribers)
+}
+
+#[tracing::instrument(skip_all)]
+async fn insert_newsletter_issue(
+    transaction: &mut Transaction<'_, Postgres>,
+    title: &str,
+    text_content: &str,
+    html_content: &str,
+) -> Result<Uuid, sqlx::Error> {
+    let newsletter_issue_id = Uuid::new_v4();
+    sqlx::query!(r#"
+        INSERT INTO newsletter_issues (
+            newsletter_issue_id,
+            title,
+            text_content,
+            html_content,
+            published_at
+        )
+        VALUES ($1, $2, $3, $4, now())
+        "#,
+        newsletter_issue_id,
+        title,
+        text_content,
+        html_content
+    )
+    .execute(transaction)
+    .await?;
+    Ok(newsletter_issue_id)
 }

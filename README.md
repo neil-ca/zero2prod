@@ -180,3 +180,28 @@ times it is executed.
 2. Design Stateless Operations: Your endpoints should not rely on the current state
 of the server.
 3. Generate unique identifiers
+
+### Backward recovery and Forward
+- Backward recovery tries to achieve a semantic rollback by executing compensating actions.
+Is not good fi for our newsletter delivery system - we cannot "unsend" an email nor
+would it make sense to send a follow-up email asking subscribers to ignore the email
+we sent before (it,d be funny though).
+
+We must try to perform forward recovery - drive the overall workfow to completion
+even if one or more sub-tasks did not succeed.
+
+- Forward recovery
+has 2 types active and passive: pushes on the API caller the responsability to drive 
+the workflow to completion. The request handler leverages checkpoints to kkep track
+of its progress - e.g. "123 email have been sent out". If the handler crashes, the next
+API call will resume processing from the latest enpoint.
+
+Active recovery, instead, does not require the caller to do anything apart from kicking
+off the workflow. The system must self-heal.
+We would rely on a background process - e.g. a background task on our API - to detect
+newsletter issues whose delivery stopped halfway. The process would then drive the delivery
+to completion.
+Healing would happen asynchronously - outside the lifecycle of the original POST
+/admin/newsletters request.
+
+
