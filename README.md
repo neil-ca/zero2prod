@@ -204,4 +204,16 @@ to completion.
 Healing would happen asynchronously - outside the lifecycle of the original POST
 /admin/newsletters request.
 
+### Asynchronous Processng
+We do not want the author to receive an error back from the API while, under the hood,
+newsletter deivery has been kicked off.
+We can improve the user experience by changing the expectations for `POST /admin/newsletters`.
+We can reduce its scope: a successful form submission will mean that the newsletter
+has been validated and will be delivered to all subscriers, asynchronously.
 
+The request handlers is no longer going to dispatch emails -it will siply enqueue
+a list of tasks that will be fulfilled asynchronously by a set of background workers.
+At a glance, it might look like a small difference - we are just shifting around
+when work needs to happen. But it has a powerful implication. we recover transactionality.
+Our subscriber's data, our idempotency records, the task queue can be wrapped in 
+a transaction.

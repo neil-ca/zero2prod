@@ -1,9 +1,9 @@
 use secrecy::{ExposeSecret, Secret};
 use serde_aux::field_attributes::deserialize_number_from_string;
-use sqlx::ConnectOptions;
 use sqlx::postgres::PgConnectOptions;
 use sqlx::postgres::PgSslMode;
-use std::convert::{TryInto, TryFrom};
+use sqlx::ConnectOptions;
+use std::convert::{TryFrom, TryInto};
 
 use crate::domain::SubscriberEmail;
 use crate::email_client::EmailClient;
@@ -21,7 +21,7 @@ pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
     pub authorization_token: Secret<String>,
-    pub timeout_milliseconds: u64
+    pub timeout_milliseconds: u64,
 }
 
 impl EmailClientSettings {
@@ -32,7 +32,7 @@ impl EmailClientSettings {
             self.base_url,
             sender_email,
             self.authorization_token,
-            timeout
+            timeout,
         )
     }
     pub fn sender(&self) -> Result<SubscriberEmail, String> {
@@ -48,7 +48,7 @@ pub struct ApplicationSettings {
     pub port: u16,
     pub host: String,
     pub base_url: String,
-    pub hmac_secret: Secret<String>
+    pub hmac_secret: Secret<String>,
 }
 
 #[derive(serde::Deserialize, Clone)]
@@ -59,7 +59,7 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
-    pub require_ssl: bool
+    pub require_ssl: bool,
 }
 
 impl DatabaseSettings {
@@ -81,7 +81,6 @@ impl DatabaseSettings {
         options.log_statements(tracing::log::LevelFilter::Trace);
         options
     }
-
 }
 
 pub fn get_configuration() -> Result<Settings, config::ConfigError> {
@@ -98,17 +97,18 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
     let environment_filename = format!("{}.yaml", environment.as_str());
     let settings = config::Config::builder()
         .add_source(config::File::from(
-                configuration_directory.join("base.yaml"),
+            configuration_directory.join("base.yaml"),
         ))
         .add_source(config::File::from(
-                configuration_directory.join(environment_filename)
+            configuration_directory.join(environment_filename),
         ))
-        .add_source(config::Environment::with_prefix("APP")
-                    .prefix_separator("_")
-                    .separator("__"),
+        .add_source(
+            config::Environment::with_prefix("APP")
+                .prefix_separator("_")
+                .separator("__"),
         )
         .build()?;
-    
+
     settings.try_deserialize::<Settings>()
 }
 
