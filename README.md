@@ -1,20 +1,12 @@
 # zero2prod - Reliable API - Zero Downtime Deployments
 
 ## todo 
-    [*] write a module to send an email
-    [*] adapt the logic of our existing POST /subscriptions request handler to match
-    the new requirments
-    [*] write a GET /subscriptions/confirm request handler from scratch
     [] As the blog author, I want to send an email to all my confirmed subscribers
-    // 1. Remove the timing between an auth failure due to an invalid password 
-    and an auth failure due to a non-existent username;
-    2. Limit the nuber of failed  auth attempts for a given IP/username
-    [] retrieve the newsletter issue details from the body of the incoming API call
-    [] fetch the list of all confirmed subscribers from the database
-    [] iteretate through the whole list:
-        - Get the subscriber email
-        - Send an email via Postmark
-    [] build the admin panel for our writters
+    [] Fix test related to deliver Email's and idempotency
+        1 - newsletter_creation_is_idempotent
+        2 - concurrent_form_submission_is_handled_gracefully
+        3 - newsletters_are_delivered_to_confirmed_subscribers
+    [] Document the API
 
 ## Limitations of the Naive approach
 1. Security

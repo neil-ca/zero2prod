@@ -1,14 +1,15 @@
-use crate::{domain::SubscriberEmail, email_client::EmailClient, configuration::Settings, startup::get_connection_pool};
+use crate::{
+    configuration::Settings, domain::SubscriberEmail, email_client::EmailClient,
+    startup::get_connection_pool,
+};
 use sqlx::{PgPool, Postgres, Transaction};
 use std::time::Duration;
 use uuid::Uuid;
 
-pub async fn run_worker_until_stopped(
-    configuration: Settings
-) -> Result<(), anyhow::Error> {
+pub async fn run_worker_until_stopped(configuration: Settings) -> Result<(), anyhow::Error> {
     let connection_pool = get_connection_pool(&configuration.database);
     let email_client = configuration.email_client.client();
-    worker_loop(connection_pool, email_client).await 
+    worker_loop(connection_pool, email_client).await
 }
 
 async fn worker_loop(pool: PgPool, email_client: EmailClient) -> Result<(), anyhow::Error> {
@@ -137,7 +138,6 @@ struct NewsletterIssue {
     text_content: String,
     html_content: String,
 }
-
 
 async fn get_issue(pool: &PgPool, issue_id: Uuid) -> Result<NewsletterIssue, anyhow::Error> {
     let issue = sqlx::query_as!(

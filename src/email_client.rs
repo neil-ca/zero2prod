@@ -16,10 +16,7 @@ impl EmailClient {
         authorization_token: Secret<String>,
         timeout: std::time::Duration,
     ) -> Self {
-        let http_client = Client::builder()
-            .timeout(timeout)
-            .build()
-            .unwrap();
+        let http_client = Client::builder().timeout(timeout).build().unwrap();
         Self {
             http_client,
             base_url,
@@ -67,7 +64,7 @@ struct SendEmailRequest<'a> {
 mod tests {
     use crate::domain::SubscriberEmail;
     use crate::email_client::EmailClient;
-    use claim::{assert_ok, assert_err};
+    use claim::{assert_err, assert_ok};
     use fake::faker::internet::en::SafeEmail;
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
@@ -103,10 +100,10 @@ mod tests {
     }
     fn email_client(base_url: String) -> EmailClient {
         EmailClient::new(
-            base_url, 
+            base_url,
             email(),
             Secret::new(Faker.fake()),
-            std::time::Duration::from_millis(200)
+            std::time::Duration::from_millis(200),
         )
     }
     #[tokio::test]
@@ -161,11 +158,11 @@ mod tests {
         assert_err!(outcome);
     }
 
-    // This is far from ideal: if the server starts misbehaving we might 
+    // This is far from ideal: if the server starts misbehaving we might
     // start to accumulate several "hanging" requests.
     // We are not hanging up on the server, so the connection is bussy: every
     // time we need to send an email we will have to open a new connection. If
-    // the server does not recover fast enough, and we do not close any of the 
+    // the server does not recover fast enough, and we do not close any of the
     // open connections, we might end up with socket exhaustion/performance defradation.
     // As a rule of thumb: every time you are performing an IO operation, always set a timeout.
 
@@ -175,8 +172,7 @@ mod tests {
         let mock_server = MockServer::start().await;
         let email_client = email_client(mock_server.uri());
 
-        let response = ResponseTemplate::new(200)
-            .set_delay(std::time::Duration::from_secs(180));
+        let response = ResponseTemplate::new(200).set_delay(std::time::Duration::from_secs(180));
         Mock::given(any())
             .respond_with(response)
             .expect(1)
