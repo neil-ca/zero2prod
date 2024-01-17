@@ -7,6 +7,8 @@
         2 - concurrent_form_submission_is_handled_gracefully
         3 - newsletters_are_delivered_to_confirmed_subscribers
     [] Document the API
+    [] Use my own SMTP server
+    [] deploy in k3s
 
 ## Limitations of the Naive approach
 1. Security
